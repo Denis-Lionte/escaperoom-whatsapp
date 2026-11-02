@@ -14,6 +14,20 @@ export const INITIAL_DATA = {
     roomName: "Sanatoriul Psihiatric Poiana Verde - Pavilionul 9",
     autoTypingDelayMs: 1800,
   },
+  // Reguli speciale pentru numere necunoscute / adăugate manual de jucător (ex: Curier)
+  secretTriggers: [
+    {
+      id: "sec_courier",
+      phoneNumber: "0752593149",
+      contactName: "Curier Urgent (0752593149)",
+      contactStatus: "Livrări rapide sanatoriu",
+      contactAvatar: "https://images.unsplash.com/photo-1580674684081-7617fbf3d745?w=150&auto=format&fit=crop&q=80",
+      triggerType: "any_first_message", // răspunde la orice prim mesaj trimis
+      responseMessage: "Salut! Sunt la intrarea Pavilionului 9 cu pachetul de la Bogdan. Bate de 5 ori în ușa de la intrare ca să știu că ești tu și îți dau coletul!",
+      delayMs: 1500,
+      enabled: true
+    }
+  ],
   contacts: [
     {
       id: "igor_morga",

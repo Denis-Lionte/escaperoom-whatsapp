@@ -41,19 +41,26 @@ export default function WhatsAppWeb({ data, onUpdateMessages, onLogout }) {
 
     const trimmedInput = newContactName.trim();
     const cleanDigits = trimmedInput.replace(/\D/g, '');
-    const isCourierNumber = cleanDigits === '0752593149' || cleanDigits === '40752593149' || trimmedInput.includes('0752593149');
+
+    // Căutăm dacă există un secretTrigger (ex: curier) configurat în setări
+    const secretTriggers = data.secretTriggers || [];
+    const matchedSecret = secretTriggers.find(st => {
+      if (!st.enabled) return false;
+      const targetClean = (st.phoneNumber || '').replace(/\D/g, '');
+      return cleanDigits === targetClean || 
+             (targetClean && cleanDigits.endsWith(targetClean)) ||
+             trimmedInput.toLowerCase().includes((st.phoneNumber || '').toLowerCase());
+    });
 
     const newContact = {
       id: `contact_${Date.now()}`,
-      name: isCourierNumber ? 'Curier Urgent (0752593149)' : trimmedInput,
-      avatar: isCourierNumber 
-        ? 'https://images.unsplash.com/photo-1580674684081-7617fbf3d745?w=150&auto=format&fit=crop&q=80'
-        : `https://ui-avatars.com/api/?name=${encodeURIComponent(trimmedInput)}&background=2a3942&color=25d366`,
-      status: isCourierNumber ? 'Livrări rapide sanatoriu' : (newContactStatus.trim() || 'Disponibil'),
+      name: matchedSecret ? (matchedSecret.contactName || trimmedInput) : trimmedInput,
+      avatar: matchedSecret?.contactAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(trimmedInput)}&background=2a3942&color=25d366`,
+      status: matchedSecret ? (matchedSecret.contactStatus || 'Disponibil') : (newContactStatus.trim() || 'Disponibil'),
       lastSeen: 'online',
       unread: 0,
       messages: [],
-      isCourier: isCourierNumber,
+      matchedSecretId: matchedSecret ? matchedSecret.id : null,
       doctorCreated: true,
     };
 
@@ -100,36 +107,41 @@ export default function WhatsAppWeb({ data, onUpdateMessages, onLogout }) {
 
   // ─── Rule matching ────────────────────────────────────────────────────────────
   const checkRules = (playerText, contact, currentContacts) => {
-    // 🚚 Verificare specială Curier (număr secret 0752593149)
-    const isCourier = contact.isCourier || 
-      contact.name?.includes('0752593149') || 
-      contact.name?.replace(/\D/g, '') === '0752593149';
+    // 🚚 Verificare trigger special pentru numere ascunse (ex: Curier)
+    const secretTriggers = data.secretTriggers || [];
+    const secretMatch = secretTriggers.find(st => 
+      st.enabled && (
+        contact.matchedSecretId === st.id ||
+        (st.phoneNumber && contact.name?.replace(/\D/g, '').endsWith(st.phoneNumber.replace(/\D/g, '')))
+      )
+    );
 
-    if (isCourier) {
-      // Verificăm dacă este primul mesaj primit de la curier
-      const hasPreviousCourierReply = contact.messages?.some(m => m.sender === 'them');
-      if (!hasPreviousCourierReply) {
+    if (secretMatch) {
+      // Verificăm dacă a primit deja răspuns
+      const hasPreviousReply = contact.messages?.some(m => m.sender === 'them');
+      if (!hasPreviousReply) {
+        const delay = secretMatch.delayMs || 1500;
         setActiveTypingContactId(contact.id);
         setTimeout(() => {
           setActiveTypingContactId(null);
           sounds.playReceived();
           const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          const courierMsg = {
-            id: `msg_curier_${Date.now()}`,
+          const secretResponseMsg = {
+            id: `msg_secret_${Date.now()}`,
             sender: 'them',
             type: 'text',
-            content: 'Salut! Sunt la intrarea Pavilionului 9 cu pachetul de la Bogdan. Bate de 5 ori în ușa de la intrare ca să știu că ești tu și îți dau coletul!',
+            content: secretMatch.responseMessage || 'Mesaj recepționat.',
             timestamp: timeStr,
             status: 'received',
           };
           const finalContacts = currentContacts.map(c =>
             c.id === contact.id
-              ? { ...c, messages: [...(c.messages || []), courierMsg] }
+              ? { ...c, messages: [...(c.messages || []), secretResponseMsg] }
               : c
           );
           setContacts(finalContacts);
           onUpdateMessages(finalContacts);
-        }, 1500);
+        }, delay);
         return;
       }
     }
