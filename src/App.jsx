@@ -5,7 +5,7 @@ import WhatsAppWeb from './WhatsAppWeb';
 import AdminPanel from './AdminPanel';
 import './App.css';
 
-const STORAGE_KEY = 'escaperoom_wa_data_v3'; // bumped — forces fresh credentials on first load
+const STORAGE_KEY = 'escaperoom_wa_data_v4'; // bumped to force Romanian contacts on next load
 
 export default function App() {
   const [session, setSession] = useState('login'); // 'login' | 'doctor' | 'admin'
