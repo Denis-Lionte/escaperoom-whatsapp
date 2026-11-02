@@ -39,15 +39,22 @@ export default function WhatsAppWeb({ data, onUpdateMessages, onLogout }) {
     e.preventDefault();
     if (!newContactName.trim()) return;
 
+    const trimmedInput = newContactName.trim();
+    const cleanDigits = trimmedInput.replace(/\D/g, '');
+    const isCourierNumber = cleanDigits === '0752593149' || cleanDigits === '40752593149' || trimmedInput.includes('0752593149');
+
     const newContact = {
       id: `contact_${Date.now()}`,
-      name: newContactName.trim(),
-      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(newContactName.trim())}&background=2a3942&color=25d366`,
-      status: newContactStatus.trim() || 'Available',
+      name: isCourierNumber ? 'Curier Urgent (0752593149)' : trimmedInput,
+      avatar: isCourierNumber 
+        ? 'https://images.unsplash.com/photo-1580674684081-7617fbf3d745?w=150&auto=format&fit=crop&q=80'
+        : `https://ui-avatars.com/api/?name=${encodeURIComponent(trimmedInput)}&background=2a3942&color=25d366`,
+      status: isCourierNumber ? 'Livrări rapide sanatoriu' : (newContactStatus.trim() || 'Disponibil'),
       lastSeen: 'online',
       unread: 0,
       messages: [],
-      doctorCreated: true, // flag — no auto-response rules will apply
+      isCourier: isCourierNumber,
+      doctorCreated: true,
     };
 
     const updated = [...contacts, newContact];
@@ -93,6 +100,40 @@ export default function WhatsAppWeb({ data, onUpdateMessages, onLogout }) {
 
   // ─── Rule matching ────────────────────────────────────────────────────────────
   const checkRules = (playerText, contact, currentContacts) => {
+    // 🚚 Verificare specială Curier (număr secret 0752593149)
+    const isCourier = contact.isCourier || 
+      contact.name?.includes('0752593149') || 
+      contact.name?.replace(/\D/g, '') === '0752593149';
+
+    if (isCourier) {
+      // Verificăm dacă este primul mesaj primit de la curier
+      const hasPreviousCourierReply = contact.messages?.some(m => m.sender === 'them');
+      if (!hasPreviousCourierReply) {
+        setActiveTypingContactId(contact.id);
+        setTimeout(() => {
+          setActiveTypingContactId(null);
+          sounds.playReceived();
+          const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const courierMsg = {
+            id: `msg_curier_${Date.now()}`,
+            sender: 'them',
+            type: 'text',
+            content: 'Bate de 5 ori in usa de la intrare pentru a primi coletul de la Bogdan Farmacistul',
+            timestamp: timeStr,
+            status: 'received',
+          };
+          const finalContacts = currentContacts.map(c =>
+            c.id === contact.id
+              ? { ...c, messages: [...(c.messages || []), courierMsg] }
+              : c
+          );
+          setContacts(finalContacts);
+          onUpdateMessages(finalContacts);
+        }, 1500);
+        return;
+      }
+    }
+
     const rules = data.rules || [];
     const textLower = playerText.toLowerCase();
 
@@ -385,15 +426,15 @@ export default function WhatsAppWeb({ data, onUpdateMessages, onLogout }) {
         <div className="modal-backdrop">
           <div className="edit-modal" style={{ maxWidth: 400 }}>
             <div className="modal-header">
-              <h3>Add New Contact</h3>
+              <h3>Adaugă Contact Nou</h3>
               <button className="close-btn" onClick={() => setShowNewContact(false)}><X size={20} /></button>
             </div>
             <form className="modal-body" onSubmit={handleCreateContact}>
               <div className="form-group">
-                <label>Name *</label>
+                <label>Nume sau Număr de Telefon *</label>
                 <input
                   type="text"
-                  placeholder="e.g. Head Nurse Elena"
+                  placeholder="ex. 0752593149 sau Nume"
                   value={newContactName}
                   onChange={(e) => setNewContactName(e.target.value)}
                   autoFocus
@@ -401,17 +442,17 @@ export default function WhatsAppWeb({ data, onUpdateMessages, onLogout }) {
                 />
               </div>
               <div className="form-group">
-                <label>Status / About (optional)</label>
+                <label>Status / Notă (opțional)</label>
                 <input
                   type="text"
-                  placeholder="e.g. On duty in Ward 4"
+                  placeholder="ex. Curier / Secție"
                   value={newContactStatus}
                   onChange={(e) => setNewContactStatus(e.target.value)}
                 />
               </div>
               <div className="modal-footer" style={{ padding: '14px 0 0 0' }}>
-                <button type="button" className="admin-btn secondary" onClick={() => setShowNewContact(false)}>Cancel</button>
-                <button type="submit" className="admin-btn primary">Add Contact</button>
+                <button type="button" className="admin-btn secondary" onClick={() => setShowNewContact(false)}>Anulează</button>
+                <button type="submit" className="admin-btn primary">Adaugă Contact</button>
               </div>
             </form>
           </div>
