@@ -5,7 +5,7 @@ import WhatsAppWeb from './WhatsAppWeb';
 import AdminPanel from './AdminPanel';
 import './App.css';
 
-const STORAGE_KEY = 'escaperoom_wa_data_v4'; // bumped to force Romanian contacts on next load
+const STORAGE_KEY = 'escaperoom_wa_data_v5'; // bumped to force updated pharmacy lore
 
 export default function App() {
   const [session, setSession] = useState('login'); // 'login' | 'doctor' | 'admin'

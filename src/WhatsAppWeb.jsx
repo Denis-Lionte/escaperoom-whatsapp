@@ -118,7 +118,7 @@ export default function WhatsAppWeb({ data, onUpdateMessages, onLogout }) {
             id: `msg_curier_${Date.now()}`,
             sender: 'them',
             type: 'text',
-            content: 'Bate de 5 ori in usa de la intrare pentru a primi coletul de la Bogdan Farmacistul',
+            content: 'Salut! Sunt la intrarea Pavilionului 9 cu pachetul de la Bogdan. Bate de 5 ori în ușa de la intrare ca să știu că ești tu și îți dau coletul!',
             timestamp: timeStr,
             status: 'received',
           };
@@ -431,10 +431,10 @@ export default function WhatsAppWeb({ data, onUpdateMessages, onLogout }) {
             </div>
             <form className="modal-body" onSubmit={handleCreateContact}>
               <div className="form-group">
-                <label>Nume sau Număr de Telefon *</label>
+                <label>Adaugă un număr sau un nume *</label>
                 <input
                   type="text"
-                  placeholder="ex. 0752593149 sau Nume"
+                  placeholder="Adaugă un număr sau un nume..."
                   value={newContactName}
                   onChange={(e) => setNewContactName(e.target.value)}
                   autoFocus
