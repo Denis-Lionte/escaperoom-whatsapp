@@ -5,7 +5,7 @@ import WhatsAppWeb from './WhatsAppWeb';
 import AdminPanel from './AdminPanel';
 import './App.css';
 
-const STORAGE_KEY = 'escaperoom_wa_data_v6'; // bumped to activate custom secret triggers system
+const STORAGE_KEY = 'escaperoom_wa_data_v7'; // bumped to set provided custom scenario as default
 
 export default function App() {
   const [session, setSession] = useState('login'); // 'login' | 'doctor' | 'admin'
